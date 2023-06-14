@@ -11,6 +11,8 @@
 *.synctex.gz
 *.toc
 *.out
+*.nav
+*.snm
 svg-inkscape
 
 _minted-main

@@ -1,0 +1,127 @@
+% beamer loads hyperref and url; let's pass our options to the package
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\documentclass[
+  ignorenonframetext,
+  aspectratio=169
+]{beamer}
+\usepackage{nus-theme}
+
+\usepackage[
+  backend=biber,
+  style=lncs,
+]{biblatex}
+
+\addbibresource{references.bib}
+
+\newcommand{\citet}[1]{\citeauthor*{#1}~\cite{#1}}
+\newcommand{\Citet}[1]{\Citeauthor*{#1}~\cite{#1}}
+
+\hypersetup{
+  pdftitle={Extending JumpProcesses.jl for fast point process simulation},
+  pdfauthor={Guilherme Augusto Zagatti, Samuel A. Isaacson, Christopher Rackauckas, Vasily Ilin, See-Kiong Ng, Stéphane Bressan},
+  pdflang={en},
+  hidelinks,
+  pdfcreator={Guilherme Zagatti}}
+
+\title{Extending \texttt{JumpProcesses.jl}}
+\subtitle{for fast point process simulation}
+\author{%
+  Guilherme Augusto Zagatti \inst{1} \and%
+  Samuel A. Isaacson \inst{3} \and%
+  Christopher Rackauckas \inst{4} \and%
+  Vasily Ilin \inst{5} \and%
+  See-Kiong Ng \inst{1,2} \and%
+  Stéphane Bressan \inst{1,2}%
+}
+\institute{%
+  \inst{1} Institute of Data Science, National University of Singapore \and%
+  \inst{2} School of Computing, National University of Singapore \and%
+  \inst{3} Department of Mathematics and Statistics, Boston University \and%
+  \inst{4} Computer Science and AI Laboratory (CSAIL), Massachusetts Institute of Technology \and%
+  \inst{5} Department of Mathematics, University of Washington
+}
+\date[JuliaCon 2023]{JuliaCon 2023}
+
+\begin{document}
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\hypertarget{introduction}{%
+\section{Introduction}\label{introduction}}
+
+\begin{frame}{Motivation}
+% Don’t forget that your audience will likely not know much about jump processes in general, so a bit of an introduction to them and what they can be used for (and what the problem CoEvolve solves is) will likely be very helpful.
+\end{frame}
+
+\hypertarget{point-processes}{%
+\section{Point processes}\label{point-processes}}
+
+\begin{frame}{Point processes}
+% intro to point process; point vs jump processes; the compensator/rate
+\end{frame}
+
+\begin{frame}{Compensators}
+\end{frame}
+
+\begin{frame}{Contribution}
+\end{frame}
+
+\begin{frame}{Simulation}
+\end{frame}
+
+\hypertarget{jumpprocessesjl}{%
+\section{JumpProcesses.jl}\label{jumpprocessesjl}}
+
+\begin{frame}{DifferentialEquations.jl: Steppers and Callbacks}
+% JumpProcesses; how does it connect to OrdinaryDiffEq
+\end{frame}
+
+\begin{frame}{JumpProcesses.jl Aggregator: A Custom DifferentialEquations.jl Callback}
+\end{frame}
+
+\begin{frame}{Simple simulation}
+\end{frame}
+
+\begin{frame}{Aggregator types}
+% Algorithms <-> Aggregators
+\end{frame}
+
+\hypertarget{benchmarks}{%
+\section{Benchmarks}\label{benchmarks}}
+
+\begin{frame}{Benchmark Setup}
+\end{frame}
+
+\begin{frame}{Constant rate}
+\end{frame}
+
+\begin{frame}{The Hawkes process}
+\end{frame}
+
+\begin{frame}{Synapse}
+\end{frame}
+
+\hypertarget{conclusion}{%
+\section{Conclusion}\label{conclusion}}
+
+\begin{frame}{Conclusion}
+\end{frame}
+
+\begin{frame}
+  \thispagestyle{empty@titlepage}
+  \begingroup
+    \setbeamercolor{structure}{fg=white}
+    \begin{beamercolorbox}[sep=8pt,center]{title}%
+      {\usebeamerfont{title}\usebeamercolor{title}Thank you!}%
+    \end{beamercolorbox}
+  \endgroup
+\end{frame}
+
+\begin{frame}[t,allowframebreaks]
+  \frametitle{References}
+  \printbibliography[heading=none]
+\end{frame}
+
+\end{document}
