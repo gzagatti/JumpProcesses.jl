@@ -3,20 +3,24 @@
 \PassOptionsToPackage{hyphens}{url}
 \documentclass[
   ignorenonframetext,
-  aspectratio=169
+  aspectratio=169,
+  xcolor={dvipsnames,rgb}
 ]{beamer}
 \usepackage{nus-theme}
+\usepackage{jlcode} % from algorithmicx
 
-\usepackage[
-  backend=biber,
-  style=lncs,
-]{biblatex}
+\lstset{
+  language=Julia,
+  basicstyle=\small\ttfamily\setbox\strutbox\hbox{},
+  breaklines=true,
+  columns=flexible
+}
 
+% references
+\usepackage[backend=biber, style=lncs]{biblatex}
 \addbibresource{references.bib}
 
-\newcommand{\citet}[1]{\citeauthor*{#1}~\cite{#1}}
-\newcommand{\Citet}[1]{\Citeauthor*{#1}~\cite{#1}}
-
+% metadata
 \hypersetup{
   pdftitle={Extending JumpProcesses.jl for fast point process simulation},
   pdfauthor={Guilherme Augusto Zagatti, Samuel A. Isaacson, Christopher Rackauckas, Vasily Ilin, See-Kiong Ng, Stéphane Bressan},
@@ -44,56 +48,298 @@
 \date[JuliaCon 2023]{JuliaCon 2023}
 
 \begin{document}
+
 \begin{frame}
   \titlepage
 \end{frame}
 
-\hypertarget{introduction}{%
-\section{Introduction}\label{introduction}}
+\hypertarget{jump-processes}{\section{Jump processes}\label{jump-processes}}
 
-\begin{frame}{Motivation}
+\begin{frame}{\texttt{DifferentialEquations.jl}: Suite for numerically solving \( u \)}
+
+\vspace{2em}
+
+{\Large
+
+\[
+  du = 
+      f(u, p, t) \eqnmarkbox[nus@gray]{deterministic}{dt} 
+    + g (u, p, t) \eqnmarkbox[nus@orangebright]{diffusion}{dW (t)} 
+    + h (u, p, t) \eqnmarkbox[nus@bluebright]{jump}{dN (t)}
+\]
+
+
+\annotate[yshift=1em]{above,left}{deterministic}{\textbf{Deterministic component}}
+\annotate[yshift=0.75em]{above}{diffusion}{\textbf{Diffusion component}\\``some change occurs during any time interval,\\however small, but in small time intervals\\the changes are small'' \citet{feller1949}}
+\annotate[yshift=-1.5em]{below,left}{jump}{\textbf{Jump component}\\``the system remains for a time unchanged,\\then undergoes a sudden change into another state.'' \citet{feller1949}}
+
+\vspace{3em}
+}
+
+\texttt{JumpProcesses.jl}: core library of \texttt{DifferentialEquations.jl} to sample the \alert{jump component}
+
+Lacked efficient methods to simulate jumps with locally-bounded variable intensity rates.
+
+\end{frame}
+
 % Don’t forget that your audience will likely not know much about jump processes in general, so a bit of an introduction to them and what they can be used for (and what the problem CoEvolve solves is) will likely be very helpful.
 
-% applications in seismology, neuroscience, finance, healthcar, social media, biochemistry
-% a simple model of chemical reaction?
+\begin{frame}{Jump (or point) process}
+
+\fullsizegraphic{svg-inkscape/simple-jump.pdf}
+
+Models the occurrence of random points (or events) over a support. 
+
+\vspace{3em}
+
+\begin{description}[labelwidth=2cm]
+  \item[Seismology] Epidemic type after-shock (ETAS) model, \eg~\citet{saichev2007}
+  \item[Neuroscience] Model of hippocampal synaptic plasticity, \eg~\citet{rodrigues2021}
+  \item[Finance] Asset price and financial risk models, \eg~\citet{bjork2021}
+  \item[Biochemistry] Well-stirred chemically reacting systems, \eg~\citet{gillespie2001}
+  \item[Social Media] Information diffusion and social network evolution, \eg~\citet{farajtabar2017}
+\end{description}
 
 \end{frame}
 
-\hypertarget{point-processes}{%
-\section{Point processes}\label{point-processes}}
+\begin{frame}{Jump processes are point processes}
 
-\begin{frame}{Point processes}
-% intro to point process; point vs jump processes; the compensator/rate
+\fullsizegraphic{svg-inkscape/jump-as-measure.pdf}
+
+\( N (t) \) denotes the total number of jumps over \( [0, t] \), we assume no common jumps:
+\[
+  P(N(t + dt) - N(t) \in \{ 0, 1 \}) = P( dN(t) \in \{ 0, 1 \}) = 1
+\]
+
+\vspace{5em}
+
+\( N[t_1, t_2] \) denotes the total number of points in \( [t_1, t_2] \). 
+
+\vspace{1em}
+
+In other words, \( N( \cdot ) \) is a random integer measure of the positive real line. 
+
 \end{frame}
 
-\begin{frame}{Compensators}
+% \begin{frame}{Constructing jump intervals}
+
+% \fullsizegraphic{svg-inkscape/prob-intervals.pdf}
+
+% \vspace{-2em}
+
+% Most jump processes over a temporal support can be described according to the likelihood that jumps appear over time.
+
+% \vspace{10em}
+
+% The diagram presents two manners of constructing a jump processes, either via the {\color{nus@bluebright} interarrival} or {\color{nus@orangebright} waiting} interval.
+
+% \end{frame}
+
+\begin{frame}{Conditional intensity}
+
+Evolutionary or temporal processes are jump processes over a uni-dimensional support, their likelihhod is fully characterized by its conditional intensity --- itself a stochastic process:
+
+\vspace{2em}
+
+\[
+  \lambda^{\eqnmarkbox[nus@gray]{conditioning}{\ast}} (t) \equiv \lambda(t \mid \eqnmarkbox[nus@gray]{history}{H_{t^-}}) = 
+    \frac{
+      \eqnmarkbox[nus@orangebright]{pdf}{p^\ast(t)}
+    }{
+      \eqnmarkbox[nus@bluebright]{survival}{1 - \int_{t}^{t_n} p^\ast(u) \, du}
+    }
+\]
+
+\annotate[yshift=1.5em]{above,left}{history,conditioning}{History of events, \( H_{t^-} = \{ (t_n, k_n) \mid 0 \leq t_n \leq t \}\)\\\( \ast \) denotes the conditioning on \( H_{t^-} \)}
+\annotate[yshift=1em]{above,right}{pdf}{Prob. density of event taking place\\at time \( t \) given \( H_t \)}
+\annotate[yshift=-1em]{below,left}{survival}{Survival function,\\no event takes place from \( t_n \) until \( t \)}
+
+\vspace{4em}
+
+It can be interpreted as the rate of event per unit of time: \( E(dN(t) \mid H_{t^-}) \approx \lambda^\ast(t) \; dt \). 
+
+\end{frame}
+
+\begin{frame}{Compensator}
+
+The compensator is the sum of the conditional intensity over time.
+\[
+  \Lambda^\ast (t_n) \equiv \tilde{t}_n \equiv \int_0^{t_n} \lambda^\ast (u) du
+\]
+The transformed data \( \tilde{t}_n \) forms a homogeneous Poisson process with unit rate.
+\[
+  \Delta \tilde{t}_n \equiv \tilde{t}_n - \tilde{t}_{n-1} \sim \exp(1)
+\]
+
 \end{frame}
 
 \begin{frame}{Contribution}
+
+\fullsizegraphic{svg-inkscape/contribution.pdf}
+
+\vspace{-3em}
+
+We extended \texttt{JumpProcesses.jl} with a new simulation algorithm, \texttt{Coevolve}, that enables the rapid simulation of processes with a non-negative, left-continuous, history-adapted and locally bounded intensity rate coupled or not with differential equations such as the one below.
+
+\vspace{5em}
+
+One of the few readily available, fast, general-purpose libraries for simulating temporal point processes.
+
 \end{frame}
 
 \begin{frame}{Simulation}
+
+There are 3 general techniques for simulating a jump process:
+
+\begin{description}
+
+  \item[Inverse] Draw successive realizations from \( \Delta \tilde{t}_n \sim exp(1) \) and solve \( \Delta \tilde{t}_n = \int_{t_{n-1}}^{t_n} \lambda^\ast (u) du \) for \( t_n \, \).
+
+  \item[Thinning] Successively sample a homogeneous processes, then thin the obtained points with the conditional intensity of the original process.
+
+  \item[Queueing] Queue the next event time of each process on a priority queue which determines the next event; update the queue after each draw.
+  
+\end{description}
+
 \end{frame}
 
-\hypertarget{jumpprocessesjl}{%
-\section{JumpProcesses.jl}\label{jumpprocessesjl}}
+\hypertarget{jumpprocesses.jl}{\section{JumpProcesses.jl}\label{jumpprocesses.jl}}
 
-\begin{frame}{DifferentialEquations.jl: Steppers and Callbacks}
-% JumpProcesses; how does it connect to OrdinaryDiffEq
+\begin{frame}[fragile]{Simple simulation}
+
+\[
+  du = d N(t) \qquad \lambda^\ast (t) = 0.25
+\]
+
+\vspace{-1em}
+
+\begin{lstlisting}
+  # re-exports DiffEqBase
+  using JumpProcesses
+  rate(u, p, t) = p[1]
+  affect!(integrator) = integrator.u[1] += 1
+  jump = ConstantRateJump(rate, affect!)
+  u, tspan, p = [0.], (0., 200.), (0.25,)
+  # holds general problem parameters
+  dprob = DiscreteProblem(u, tspan, p)
+  # holds jump parameters and the stepper
+  jprob = JumpProblem(dprob, Direct(), jump; dep_graph=[[1]])
+  # solves jump problem with given stepper
+  sol = solve(jprob, SSAStepper())
+\end{lstlisting}
+
 \end{frame}
 
-\begin{frame}{JumpProcesses.jl Aggregator: A Custom DifferentialEquations.jl Callback}
+\begin{frame}[fragile]{DifferentialEquations.jl: Callbacks}
+
+We solve differential equations by taking small steps \( dt \), but jumps occurs at large, arbitrary steps.
+
+It might be unusual to use a library designed for differential equations to sample jumps. 
+
+\texttt{DifferentialEquations.jl} provides callbacks to add arbitrary breakpoints in the stepper.
+
+\begin{lstlisting}
+  using DiffEqBase
+  # condition(u, t, integrator), when the callback should be used
+  # affect!(integrator), modifies the integrator
+  DiscreteCallback(condition, affect!)
+\end{lstlisting}
+
 \end{frame}
 
-\begin{frame}{Simple simulation}
+\begin{frame}[fragile]{\texttt{AbstractSSAJumpAggregator}: A Custom \texttt{DifferentialEquations.jl} Callback}
+
+\texttt{JumpProcesses.jl} is a wrapper around the callback facility that allow us to sample jumps according to the conditional intensity \( \lambda^\ast (t) \).
+
+Except for the inverse method, all the algorithms for simulating temporal jump processes are based on \texttt{AbstractSSAJumpAggregator}:
+\vspace{-1em}
+\begin{lstlisting}
+# JumpProcesse.jl/src/aggregators/ssajump.jl
+function DiscreteCallback(c::AbstractSSAJumpAggregator)
+    DiscreteCallback(c, c, initialize = c, save_positions = c.save_positions)
+end
+\end{lstlisting}
+\vspace{-1em}
+
 \end{frame}
+
+\begin{frame}[fragile]{Overloading \texttt{AbstractSSAJumpAggregator}}
+
+\texttt{condition(u, t, integrator)}
+\vspace{-1em}
+\begin{lstlisting}
+function (p::AbstractSSAJumpAggregator)(u, t, integrator)
+    p.next_jump_time == t
+end
+\end{lstlisting}
+\vspace{-1em}
+
+\texttt{affect!(integrator)}
+\vspace{-1em}
+\begin{lstlisting}
+function (p::AbstractSSAJumpAggregator)(integrator::I)
+  execute_jumps!(p, integrator, integrator.u, integrator.p, integrator.t, p.affects!)
+  generate_jumps!(p, integrator, integrator.u, integrator.p, integrator.t)
+  register_next_jump_time!(integrator, p, integrator.t)
+  nothing
+end
+\end{lstlisting}
+\vspace{-1em}
+
+Most of the action is in \texttt{affect!} when we determine the time of the next jump.
+
+\end{frame}
+
+\begin{frame}[fragile]{\texttt{SSAIntegrator}: A custom stepper}
+
+Steppers determines the numerical evolution of time from \texttt{tspan[1]} to \texttt{tspan[2]} and the update of the variables \texttt{u} at each step.
+
+Callbacks are called at every step, but steppers are not guaranteed to stop at time positions when the callback condition is true unless these are added to \texttt{integrator.opts.tstops}
+
+\texttt{JumpProcesses.jl} defines its own stepper \texttt{SSAStepper}.
+
+\end{frame}
+
+% \begin{lstlisting}
+
+% function DiffEqBase.solve!(integrator::ODEIntegrator)
+%     @inbounds while !isempty(integrator.opts.tstops)
+%         while integrator.tdir * integrator.t < first(integrator.opts.tstops)
+%             loopheader!(integrator)
+%             if integrator.do_error_check && check_error!(integrator) != ReturnCode.Success
+%                 return integrator.sol
+%             end
+%             perform_step!(integrator, integrator.cache)
+%             loopfooter!(integrator)
+%             if isempty(integrator.opts.tstops)
+%                 break
+%             end
+%         end
+%         handle_tstop!(integrator)
+%     end
+%     postamble!(integrator)
+
+%     f = integrator.sol.prob.f
+
+%     if DiffEqBase.has_analytic(f)
+%         DiffEqBase.calculate_solution_errors!(integrator.sol;
+%                                               timeseries_errors = integrator.opts.timeseries_errors,
+%                                               dense_errors = integrator.opts.dense_errors)
+%     end
+%     if integrator.sol.retcode != ReturnCode.Default
+%         return integrator.sol
+%     end
+%     integrator.sol = DiffEqBase.solution_new_retcode(integrator.sol, ReturnCode.Success)
+% end
+
+% \end{lstlisting}
+
 
 \begin{frame}{Aggregator types}
 % Algorithms <-> Aggregators
 \end{frame}
 
-\hypertarget{benchmarks}{%
-\section{Benchmarks}\label{benchmarks}}
+\hypertarget{benchmarks}{\section{Benchmarks}\label{benchmarks}}
 
 \begin{frame}{Benchmark Setup}
 \end{frame}
@@ -107,8 +353,7 @@
 \begin{frame}{Synapse}
 \end{frame}
 
-\hypertarget{conclusion}{%
-\section{Conclusion}\label{conclusion}}
+\hypertarget{conclusion}{\section{Conclusion}\label{conclusion}}
 
 \begin{frame}{Conclusion}
 \end{frame}
@@ -129,3 +374,4 @@
 \end{frame}
 
 \end{document}
+

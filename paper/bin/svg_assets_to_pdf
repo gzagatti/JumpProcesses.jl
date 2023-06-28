@@ -1,0 +1,17 @@
+#!/bin/sh
+
+# SVG ASSETS TO PDF
+#
+# Given an the SVG file `assets/slides-assets.svg` created with
+# Inkscape and a layer ID, this script converts the layer to PDF. 
+#
+# Use this script as a glue to move assets from SVG to your Beamer
+# presentation.
+
+inkscape assets/slides-assets.svg \
+  --export-id="$1" \
+  --export-id-only \
+  --export-area-page \
+  --actions "select-all:layers; object-set-attribute:style, display:none; select-clear; select-by-id:$1; object-set-attribute:style, display:inline" \
+  --export-filename="svg-inkscape/$1.pdf" \
+  --export-type='pdf'

@@ -1,4 +1,7 @@
+%
 % NUS BEAMER THEME
+%
+
 % this package assumes Lua(La)Tex throughout
 \ProvidesPackage{nus-theme}[NUS Beamer theme.]
 
@@ -9,8 +12,17 @@
 \RequirePackage{xcolor} % driver-independent color extensions
 \RequirePackage{graphicx}
 \RequirePackage{subcaption}
-\RequirePackage{tikz}
+
 \RequirePackage{stackengine} % highly customised stacking of objects
+
+\RequirePackage{tikz}
+\usetikzlibrary{backgrounds}
+\usetikzlibrary{arrows,shapes}
+\usetikzlibrary{tikzmark} % for \tikzmarknode
+\usetikzlibrary{calc} % for computing the midpoint between two nodes, e.g. at ($(p1.north)!0.5!(p2.north)$)
+
+\RequirePackage{annotate-equations}
+
 \RequirePackage{svg}
 \svgsetup{inkscapearea=page, inkscapelatex=true}
 
@@ -37,8 +49,30 @@
 
 \setcounter{secnumdepth}{-\maxdimen} % remove section numbering
 
-\providecommand{\tightlist}{%
+%
+% HELPERS
+%
+
+\DeclareRobustCommand{\tightlist}{%
   \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}
+}
+
+% citing with author names and bibliographic reference
+\newcommand{\citet}[1]{\citeauthor*{#1}~\cite{#1}}
+\newcommand{\Citet}[1]{\Citeauthor*{#1}~\cite{#1}}
+\newcommand{\ie}{\textit{i}.\textit{e}.}
+\newcommand{\eg}{\textit{e}.\textit{g}.}
+
+% quote signature
+\def\signed #1{{\leavevmode\unskip\nobreak\hfil\penalty50\hskip1em
+  \hbox{}\nobreak\hfill #1%
+  \parfillskip=0pt \finalhyphendemerits=0 \endgraf}}
+
+% full-page graphic overlay
+\newcommand{\fullsizegraphic}[1]{
+  \begin{tikzpicture}[remember picture,overlay]
+    \node[at=(current page.center)] {\includegraphics{#1}};
+  \end{tikzpicture}
 }
 
 %
@@ -120,6 +154,7 @@
 %
 % ASSETS
 %
+
 % `Gin` is the name for the `keyval` keys associated with 'Graphics inclusion'
 % Scale images if necessary, so that they will not overflow the page
 % margins by default, and it is still possible to overwrite the defaults
@@ -151,6 +186,8 @@
   \end{tikzpicture}
   \unskip%
 }
+
+
 
 %
 % TEMPLATES
