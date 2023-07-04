@@ -27,6 +27,7 @@ g = [neighbors(G, i) for i in 1:nv(G)]
 gcolors = append!(palette(:default)[1:3], fill(colorant"black", V - 3))
 svg = gplot(G, nodefillc = gcolors, edgelinewidth = 0.5)
 draw(PDF("$(assets)/mediumG.pdf", 3.75cm, 3.75cm), svg)
+draw(SVG("$(assets)/mediumG.svg", 3.75cm, 3.75cm), svg)
 
 tspan = (0.0, 50.0)
 u = [0.0 for i in 1:nv(G)]

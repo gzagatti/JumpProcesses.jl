@@ -126,7 +126,7 @@ function hawkes_problem(p,
 end
 
 function hawkes_problem(p,
-                        agg::Union{Coevolve, CoevolveSynced};
+                        agg::Union{Coevolve};
                         u = [0.0],
                         tspan = (0.0, 50.0),
                         save_positions = (false, true),
