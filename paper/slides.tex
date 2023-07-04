@@ -8,13 +8,27 @@
 ]{beamer}
 \usepackage{nus-theme}
 \usepackage{jlcode} % from algorithmicx
+\usepackage{multirow}
+\usepackage{booktabs}
 
 \lstset{
   language=Julia,
-  basicstyle=\small\ttfamily\setbox\strutbox\hbox{},
-  breaklines=true,
-  columns=flexible
+  % basicstyle=\small\ttfamily\setbox\strutbox\hbox{},
+  basicstyle=\footnotesize\ttfamily,
+  showspaces=false,
+  showstringspaces=false,
+  showtabs=false,
+  frame=single,
+  breaklines=false,
+  breakatwhitespace=false,
+  backgroundcolor=\color{white},
+  rulecolor=\color{nus@gray},
+  aboveskip=1em,
+  belowskip=1em,
 }
+
+\newcommand{\highlight}[3]{\tikz[baseline=0pt, remember picture,>=stealth] { \node[rounded corners,anchor=base,fill=#1!17] (#2) {#3}; }}
+\newcommand{\ubar}[1]{\stackunder[1.2pt]{\(#1\)}{\rule{.8ex}{.075ex}}}
 
 % references
 \usepackage[backend=biber, style=lncs]{biblatex}
@@ -31,12 +45,12 @@
 \title{Extending \texttt{JumpProcesses.jl}}
 \subtitle{for fast point process simulation}
 \author{%
-  Guilherme Augusto Zagatti \inst{1} \and%
-  Samuel A. Isaacson \inst{3} \and%
-  Christopher Rackauckas \inst{4} \and%
-  Vasily Ilin \inst{5} \and%
-  See-Kiong Ng \inst{1,2} \and%
-  Stéphane Bressan \inst{1,2}%
+  Guilherme Augusto Zagatti~\inst{1} \and%
+  Samuel A. Isaacson~\inst{3} \and%
+  Christopher Rackauckas~\inst{4} \and%
+  Vasily Ilin~\inst{5} \and%
+  See-Kiong Ng~\inst{1,2} \and%
+  Stéphane Bressan~\inst{1,2}%
 }
 \institute{%
   \inst{1} Institute of Data Science, National University of Singapore \and%
@@ -55,7 +69,7 @@
 
 \hypertarget{jump-processes}{\section{Jump processes}\label{jump-processes}}
 
-\begin{frame}{\texttt{DifferentialEquations.jl}: Suite for numerically solving \( u \)}
+\begin{frame}{\texttt{DifferentialEquations.jl}}{Suite for numerically solving \( u \)}
 
 \vspace{2em}
 
@@ -76,7 +90,7 @@
 \vspace{3em}
 }
 
-\texttt{JumpProcesses.jl}: core library of \texttt{DifferentialEquations.jl} to sample the \alert{jump component}
+\alert{\texttt{JumpProcesses.jl}}: core library of \texttt{DifferentialEquations.jl} to sample the jump component.
 
 Lacked efficient methods to simulate jumps with locally-bounded variable intensity rates.
 
@@ -146,7 +160,7 @@ Evolutionary or temporal processes are jump processes over a uni-dimensional sup
     \frac{
       \eqnmarkbox[nus@orangebright]{pdf}{p^\ast(t)}
     }{
-      \eqnmarkbox[nus@bluebright]{survival}{1 - \int_{t}^{t_n} p^\ast(u) \, du}
+      \eqnmarkbox[nus@bluebright]{survival}{1 - \int_{t_n}^{t} p^\ast(u) \, du}
     }
 \]
 
@@ -187,9 +201,7 @@ One of the few readily available, fast, general-purpose libraries for simulating
 
 \end{frame}
 
-\begin{frame}{Simulation}
-
-There are 3 general techniques for simulating a jump process:
+\begin{frame}{Three techniques for simulating a jump process}
 
 \begin{description}
 
@@ -197,21 +209,20 @@ There are 3 general techniques for simulating a jump process:
 
   \item[Thinning] Successively sample a homogeneous processes, then thin the obtained points with the conditional intensity of the original process.
 
-  \item[Queueing] Queue the next event time of each process on a priority queue which determines the next event; update the queue after each draw.
-  
+  \item[Queueing] Use a priority queue to determine the order in which events occur; update the queue after each event takes place.
+
 \end{description}
 
 \end{frame}
 
 \hypertarget{jumpprocesses.jl}{\section{JumpProcesses.jl}\label{jumpprocesses.jl}}
 
-\begin{frame}[fragile]{Simple simulation}
+\begin{frame}[fragile=singleslide]{Simple simulation using \texttt{JumpProcesses.jl}}
 
 \[
   du = d N(t) \qquad \lambda^\ast (t) = 0.25
 \]
 
-\vspace{-1em}
 
 \begin{lstlisting}
   # re-exports DiffEqBase
@@ -222,7 +233,7 @@ There are 3 general techniques for simulating a jump process:
   u, tspan, p = [0.], (0., 200.), (0.25,)
   # holds general problem parameters
   dprob = DiscreteProblem(u, tspan, p)
-  # holds jump parameters and the stepper
+  # holds jump parameters
   jprob = JumpProblem(dprob, Direct(), jump; dep_graph=[[1]])
   # solves jump problem with given stepper
   sol = solve(jprob, SSAStepper())
@@ -230,11 +241,9 @@ There are 3 general techniques for simulating a jump process:
 
 \end{frame}
 
-\begin{frame}[fragile]{DifferentialEquations.jl: Callbacks}
+\begin{frame}[fragile=singleslide]{\texttt{DifferentialEquations.jl} callbacks}
 
 We solve differential equations by taking small steps \( dt \), but jumps occurs at large, arbitrary steps.
-
-It might be unusual to use a library designed for differential equations to sample jumps. 
 
 \texttt{DifferentialEquations.jl} provides callbacks to add arbitrary breakpoints in the stepper.
 
@@ -247,115 +256,325 @@ It might be unusual to use a library designed for differential equations to samp
 
 \end{frame}
 
-\begin{frame}[fragile]{\texttt{AbstractSSAJumpAggregator}: A Custom \texttt{DifferentialEquations.jl} Callback}
+\begin{frame}[fragile=singleslide]{\texttt{AbstractSSAJumpAggregator}}{A custom \texttt{DifferentialEquations.jl} callback}
 
 \texttt{JumpProcesses.jl} is a wrapper around the callback facility that allow us to sample jumps according to the conditional intensity \( \lambda^\ast (t) \).
 
 Except for the inverse method, all the algorithms for simulating temporal jump processes are based on \texttt{AbstractSSAJumpAggregator}:
-\vspace{-1em}
+
 \begin{lstlisting}
 # JumpProcesse.jl/src/aggregators/ssajump.jl
 function DiscreteCallback(c::AbstractSSAJumpAggregator)
-    DiscreteCallback(c, c, initialize = c, save_positions = c.save_positions)
+    DiscreteCallback(c, c, initialize = c,
+      save_positions = c.save_positions)
 end
 \end{lstlisting}
-\vspace{-1em}
 
 \end{frame}
 
-\begin{frame}[fragile]{Overloading \texttt{AbstractSSAJumpAggregator}}
+\begin{frame}[fragile=singleslide]{Overloading \texttt{AbstractSSAJumpAggregator}}
 
 \texttt{condition(u, t, integrator)}
-\vspace{-1em}
+
 \begin{lstlisting}
 function (p::AbstractSSAJumpAggregator)(u, t, integrator)
     p.next_jump_time == t
 end
 \end{lstlisting}
-\vspace{-1em}
 
-\texttt{affect!(integrator)}
-\vspace{-1em}
+\texttt{affect!(integrator)}: Most of the action is in here!
+
 \begin{lstlisting}
 function (p::AbstractSSAJumpAggregator)(integrator::I)
   execute_jumps!(p, integrator, integrator.u, integrator.p, integrator.t, p.affects!)
   generate_jumps!(p, integrator, integrator.u, integrator.p, integrator.t)
-  register_next_jump_time!(integrator, p, integrator.t)
+  register_next_jump_time!(integrator, p, integrator.t) 
   nothing
 end
 \end{lstlisting}
-\vspace{-1em}
-
-Most of the action is in \texttt{affect!} when we determine the time of the next jump.
 
 \end{frame}
 
-\begin{frame}[fragile]{\texttt{SSAIntegrator}: A custom stepper}
+\begin{frame}[fragile=singleslide]{\texttt{DifferentialEquations.jl} steppers}
 
-Steppers determines the numerical evolution of time from \texttt{tspan[1]} to \texttt{tspan[2]} and the update of the variables \texttt{u} at each step.
+Steppers determines the \alert{evolution} from \texttt{tspan[1]} to \texttt{tspan[2]} in terms of discrete steps and the rules for updating the integrator at each step.
 
-Callbacks are called at every step, but steppers are not guaranteed to stop at time positions when the callback condition is true unless these are added to \texttt{integrator.opts.tstops}
-
-\texttt{JumpProcesses.jl} defines its own stepper \texttt{SSAStepper}.
+\begin{lstlisting}
+# generic solver (not actual implementation)
+function solve!(integrator)
+  preamble!(integrator)
+  while should_continue_solve(integrator) # depends on t and tstop
+      loopheader!(integrator)
+      step!(integrator)
+      loopfooter!(integrator) # handle callbacks
+  end
+  postamble!(integrator)
+end
+\end{lstlisting}
 
 \end{frame}
 
-% \begin{lstlisting}
+\begin{frame}[fragile=singleslide]{\texttt{SSAStepper}}{A custom \texttt{DifferentialEquations.jl} stepper}
 
-% function DiffEqBase.solve!(integrator::ODEIntegrator)
-%     @inbounds while !isempty(integrator.opts.tstops)
-%         while integrator.tdir * integrator.t < first(integrator.opts.tstops)
-%             loopheader!(integrator)
-%             if integrator.do_error_check && check_error!(integrator) != ReturnCode.Success
-%                 return integrator.sol
-%             end
-%             perform_step!(integrator, integrator.cache)
-%             loopfooter!(integrator)
-%             if isempty(integrator.opts.tstops)
-%                 break
-%             end
-%         end
-%         handle_tstop!(integrator)
-%     end
-%     postamble!(integrator)
+Callbacks are called at every step, but steppers are not guaranteed to stop at time positions when the callback condition is true \alert{unless} these are assigned to \texttt{integrator.tstop}.
 
-%     f = integrator.sol.prob.f
+\texttt{JumpProcesses.jl} defines own stepper \texttt{SSAStepper} to handle jump-only problems \( du = h (u, p, t) dN (t) \).
 
-%     if DiffEqBase.has_analytic(f)
-%         DiffEqBase.calculate_solution_errors!(integrator.sol;
-%                                               timeseries_errors = integrator.opts.timeseries_errors,
-%                                               dense_errors = integrator.opts.dense_errors)
-%     end
-%     if integrator.sol.retcode != ReturnCode.Default
-%         return integrator.sol
-%     end
-%     integrator.sol = DiffEqBase.solution_new_retcode(integrator.sol, ReturnCode.Success)
-% end
+\begin{lstlisting}
+function register_next_jump_time!(integrator::SSAIntegrator,
+    p::AbstractSSAJumpAggregator, t)
+    integrator.tstop = p.next_jump_time
+    nothing
+end
+\end{lstlisting}
+\end{frame}
 
-% \end{lstlisting}
+\begin{frame}[fragile=singleslide]{\texttt{SSAStepper}}{A custom \texttt{DifferentialEquations.jl} stepper}
 
+Generic integrators can also handle \texttt{AbstractSSAJumpAggregator}, but less efficiently.
 
-\begin{frame}{Aggregator types}
-% Algorithms <-> Aggregators
+\begin{lstlisting}
+function register_next_jump_time!(integrator,
+    p::AbstractSSAJumpAggregator, t)
+    if p.next_jump_time < p.end_time
+        add_tstop!(integrator, p.next_jump_time)
+    end
+    nothing
+end
+\end{lstlisting}
+
+\end{frame}
+
+\begin{frame}[fragile=singleslide]{Aggregator types}
+
+\begin{lstlisting}[escapechar=\#,frame=tblr]
+    jprob = JumpProblem(prob, #\highlight{nus@bluebright}{aggregator}{aggregator}#, #\highlight{nus@bluebright}{jumps}{jumps}#; #\highlight{nus@orangebright}{depgraph}{dep\_graph}#)
+\end{lstlisting}
+
+\begin{tikzpicture}[remember picture,overlay,>=stealth,nodes={align=left,inner ysep=1pt}]
+  \node[color=nus@bluebright!85,yshift=1.1cm] (aggregatortext) at ($(aggregator.south)!0.5!(jumps.south)$) {%
+    \textsf{\footnotesize The wrapper initializes the \texttt{aggregator<:AbstractAggregatorAlgorithm} with the listed jumps.}};
+  \draw [<-,color=nus@bluebright] (aggregator.north) |- (aggregatortext.south) -| (jumps.north);
+  \node[anchor=east,color=nus@orangebright!85,yshift=-0.8cm] (depgraphtext) at (depgraph.south) {%
+    \textsf{\footnotesize Required for some aggregators.}};
+  \draw[color=nus@orangebright] (depgraph.south) |- ([xshift=-0.3ex, yshift=-0.2ex]depgraphtext.south west);
+\end{tikzpicture}
+
+\begin{description}
+
+  \item[Inverse] Not available
+
+  \item[Thinning] \texttt{Direct}, \texttt{DirectFW}, \texttt{DirectCR}, \texttt{SortingDirect}, \texttt{RDirect}, \texttt{RSSA}, \texttt{RSSACR}
+    
+  \item[Queueing] \texttt{FRM}, \texttt{FRMFW}, \texttt{NRM}, \texttt{Coevolve}
+
+\end{description}
+
+\end{frame}
+
+\begin{frame}[fragile=singleslide]{Two different types of jumps}
+
+\begin{description}
+
+  \item[\texttt{ConstantRateJump(rate, affect!)}] The conditional intensity is constant between jumps, \ie \( \lambda^\ast(t) = \lambda_n^\ast \) which can be handled by any aggregator. 
+
+  Note that the API also includes \alert{\texttt{MassActionJump}} which is a special case to simulate systems that can be represented in mass action form.
+
+  \item[\texttt{VariableRateJump(rate, affect!; urate, rateinterval, lrate)}] The conditional intensity can vary between jumps. It can only be handled by the inverse method.
+
+  When it is locally bounded, it can also be handled by the Coevolve aggregator, \ie let \( \bar{B}^\ast (t) = \bar{B}(t \mid H_t) \), \( \ubar{B}^\ast (t) = \ubar{B}(t\mid H_t) \) and \( L^\ast(t) = L(t \mid H_t) \) such that \( \lambda^\ast \, (t + u)  \leq \bar{B}^\ast(t) \)  and \( \lambda^\ast \, (t + u)  \geq \ubar{B}^\ast(t) \) for all \( 0 \leq u \leq L^\ast(t) \).
+
+\end{description}
+
+\end{frame}
+
+\begin{frame}{Thinning}
+
+\fullsizegraphic{svg-inkscape/thinning-general.pdf}
+
+\end{frame}
+
+\begin{frame}{Thinning constant rates}
+
+\fullsizegraphic{svg-inkscape/thinning-constant.pdf}
+
+\end{frame}
+
+\begin{frame}{Queueing}{The \texttt{Coevolve} approach}
+
+\fullsizegraphic{svg-inkscape/queueing.pdf}
+
 \end{frame}
 
 \hypertarget{benchmarks}{\section{Benchmarks}\label{benchmarks}}
 
 \begin{frame}{Benchmark Setup}
+
+All benchmarks available in \texttt{SciMLBenchmarks.jl} and run with BuildKite via the continuous integration facilities provided by the package maintainers.
+
+\vspace{2em}
+
+Two sets of benchmarks: (1) systems containing only \texttt{ConstantRateJump} and (2) general systems containing any type of temporal jump.
+
+\vspace{2em}
+
+Added two benchmark suites to assess the performance of the new aggregators under settings that could not be previously simulated.
+
 \end{frame}
 
-\begin{frame}{Constant rate}
+\begin{frame}{\texttt{ConstantRateJump} benchmarks}{Median execution time}
+
+\begin{table}
+\centering
+\begin{tabular}{lccccc}
+\toprule
+ & \multicolumn{1}{c}{\textbf{ Diffusion }} & \multicolumn{1}{c}{\textbf{ Multi-state }} & \multicolumn{1}{c}{\textbf{ Gene I }} & \multicolumn{1}{c}{\textbf{ Gene II }} \\
+\hline
+\textbf{\texttt{Direct}}         & 7.14 s             & 0.16 s             & \underline{0.24 ms} & \underline{0.59 s} \\
+\textbf{\texttt{FRM}}            & 15.54 s            & 0.25 s             & 0.29 ms             & 0.81 s             \\
+\textbf{\texttt{SortingDirect}}  & 1.06 s             & \underline{0.11 s} & \textbf{0.23 ms}    & \textbf{0.50 s}    \\
+\textbf{\texttt{NRM}}            & 0.76 s             & 0.25 s             & 0.40 ms             & 0.91 s             \\
+\textbf{\texttt{DirectCR}}       & \underline{0.52 s} & 0.21 s             & 0.46 ms             & 1.03 s             \\
+\textbf{\texttt{RSSA}}           & 1.42 s             & \textbf{0.10 s}    & 0.43 ms             & 0.67 s             \\
+\textbf{\texttt{RSSACR}}         & \textbf{0.43 s}    & 0.15 s             & 0.88 ms             & 1.03 s             \\
+\textbf{\texttt{Coevolve}}       & 0.88 s             & 0.34 s             & 0.54 ms             & 1.29 s             \\
+\bottomrule
+\end{tabular}
+\caption{A 1-dimensional continuous time random walk approximation of a diffusion model (Diffusion), the multi-state model from Appendix A.6~\citet{marchetti2017} (Multi-state), a simple negative feedback gene expression model (Gene I) and the negative feedback gene expression from~\citet{gupta2018} (Gene II). Fastest time is \textbf{bold}, second fastest \underline{underlined}.}
+\end{table}
+
 \end{frame}
 
-\begin{frame}{The Hawkes process}
+\begin{frame}[fragile=singleslide]{The compound Hawkes process}{A mutually exciting process}
+
+\vspace{-1em}
+
+\begin{columns}
+
+\column[t]{0.5\textwidth}
+
+\[
+  \lambda_i^\ast (t) = \lambda + \sum_{j \in E_i} \sum_{t_{n_j} < t} \alpha \exp \left[-\beta (t - t_{n_j}) \right]
+\]
+
+Recursively, it simplifies to:
+
+\begin{alignat*}{3}
+  &\lambda_i^\ast (t)      & = & \, \lambda + \phi_i^\ast (t) \\
+  &\phi_i^\ast (t)         & = & \, \exp \left[ -\beta (t - t_{N_i}) \right] \left( \alpha + \phi_i^\ast (t_{N_i}) \right) \\
+  &\phi_i^\ast(t_{0_i}) \, & = & \, 0
+\end{alignat*}
+
+\column[t]{0.5\textwidth}
+
+\begin{lstlisting}[basicstyle=\scriptsize\ttfamily,escapechar=\#]
+function rate(u, p, t)
+    #λ#, #α#, #β#, h, urate, #ϕ# = p
+    urate[i] = #λ# + exp(-#β# * (t - h[i])) * #ϕ#[i]
+    urate[i]
+end
+
+function affect(integrator)
+    #λ#, #α#, #β#, h, urate, #ϕ# = integrator.p
+    for j in g[i]
+        #ϕ#[j] *= exp(-#β# * (integrator.t - h[j]))
+        #ϕ#[j] += #α#
+        h[j] = integrator.t
+    end
+    integrator.u[i] += 1
+end
+\end{lstlisting}
+  
+\end{columns}
+
 \end{frame}
 
-\begin{frame}{Synapse}
+\begin{frame}{The compound Hawkes process benchmark}{Simulation of 10-nodes compound Hawkes process}
+
+\fullsizegraphic{svg-inkscape/hawkes.pdf}
+
+\vspace{2em}
+
+\begin{figure}
+\subfloat[]{\includegraphics[width=5cm]{assets/hawkes-barcode.pdf}}
+\subfloat[]{\includegraphics[width=5cm]{assets/hawkes-intensity.pdf}}
+\subfloat[]{\includegraphics[width=3cm]{assets/hawkes-qqplot.pdf}}
+\end{figure}
+
+
+\end{frame}
+
+\begin{frame}{The compound Hawkes process benchmark}{Median execution time, 50 samples per node (V) x time}
+
+\begin{tikzpicture}
+
+  \node[anchor=south west] (image) at (0, 0) {\includegraphics[trim={0 0 0 0.8cm},clip,width=10cm]{assets/hawkes-benchmark.png}};
+  \node[text width=8cm,overlay,yshift=4.5cm,xshift=-4.5cm,anchor=north west] at (image.south east) {%
+    \footnotesize\texttt{use\_recursion=false} loops through the whole history of past events. \texttt{use\_recursion=true} only looks at the previous state of each node. \textit{Direct()} and \texttt{Coevolve} are algorithms from \texttt{JumpProcesses.jl}. When coupled with an ODE stepper, \texttt{Direct()} does not use its own algorithm, but the inverse method mentioned previously. \texttt{PDMPCHV()} is an algorithm from \texttt{PiecewiseDeterministicMarkovProcesses.jl} and \texttt{PyTick()} is a Python library.};
+
+\end{tikzpicture}
+
+\end{frame}
+
+\begin{frame}{Synapse}{Median execution time and memory allocation, 50 samples}
+
+\begin{columns}
+
+  \column{0.5\textwidth}
+
+  \begin{table}
+  \centering
+  \begin{tabular}{lll} 
+  \toprule
+   & \textbf{Time} & \textbf{Allocation}  \\ 
+  \hline
+  \textbf{\textit{Inverse}} & -  & - \\ 
+  \textbf{\texttt{Coevolve}} & \underline{4.9 s} & \underline{131.4 Mb}  \\
+  \textbf{\textit{CHV}} & \textbf{2.4 s} & \textbf{54.0 Mb} \\
+  \bottomrule
+  \end{tabular}
+  \end{table}
+
+  \column{0.5\textwidth}
+
+  Stochastic model of hippocampal synaptic plasticity with geometrical readout of enzyme dynamics proposed in \citet{rodrigues2021}.
+
+  \vspace{.5em}
+
+  System with 98 jumps affecting 49 discrete variables and a stiff, ODE problem containing 34 continuous variables which affect jump rates.
+
+  \vspace{.5em}
+
+  \texttt{Coevolve} lags due to large rejection rate (\( \approx 70\% \)) of the thinning procedure leading to 2-3 \(\times\) more function evaluations and Jacobians created.
+
+\end{columns}
+
 \end{frame}
 
 \hypertarget{conclusion}{\section{Conclusion}\label{conclusion}}
 
 \begin{frame}{Conclusion}
+
+\texttt{JumpProcesses.jl} is a fast, general-purpose library for simulating temporal point processes. 
+
+With the addition of \texttt{Coevolve}, any point process on the real line with a non-negative, left-continuous, history-adapted and locally bounded intensity rate can be simulated.
+
+Way forward:
+
+\begin{itemize}
+
+  \item Include \textit{CHV} as a new aggregator for \texttt{VariableRateJump}
+
+  \item Automatic selection of bounds using automatic differentiation
+
+  \item Handle discontinuous rates
+
+  \item Inexact methods and compound branching processes
+
+  \item N-dimensions
+
+\end{itemize}
+
 \end{frame}
 
 \begin{frame}

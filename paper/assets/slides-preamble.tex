@@ -4,7 +4,8 @@
 \usepackage{unicode-math} % unicode mathematics support
 \usepackage{microtype}    % micro-typographic (character protrusion, font expansion, etc) enhacements
 \usepackage{amsmath}
-\setsansfont[
+\usepackage{stackengine}
+\setmainfont[
   FontFace = {lt}{n}{Lato Light}
 ]{Lato}
 \setromanfont[
@@ -19,3 +20,5 @@
 \definecolor{nus@gray}{HTML}{757575}
 \definecolor{nus@orangebright}{HTML}{F46524}
 \definecolor{nus@bluebright}{HTML}{0058B2}
+
+\newcommand{\ubar}[1]{\stackunder[1.2pt]{\(#1\)}{\rule{.8ex}{.075ex}}}

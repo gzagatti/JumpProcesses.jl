@@ -78,13 +78,16 @@
 %
 % FONTS
 %
-\setsansfont[
-  FontFace = {lt}{n}{Lato Light}
-]{Lato}
-\setromanfont[
+% see: https://mirror.kku.ac.th/CTAN/macros/unicodetex/latex/fontspec/fontspec.pdf
+\setmainfont{Lato}[
+  FontFace = {lt}{n}{Lato Light},
+  FontFace = {lt}{it}{Lato Light Italic},
+]
+\setromanfont{Raleway}[
   FontFace = {lt}{n}{Raleway Light},
   FontFace = {lt}{it}{Raleway Light Italic},
-]{Raleway}
+]
+\setmonofont{Cousine Nerd Font}[Scale=MatchLowercase]
 \setmathfont{XITS Math}
 
 % see: https://tex.stackexchange.com/questions/176722/define-a-new-xxseries-macro-for-light-fonts
@@ -93,14 +96,15 @@
 
 \usefonttheme{professionalfonts} % disable beamer internal replacements
 
-\setbeamerfont{alerted text}{series=\itshape}
+\setbeamerfont{alerted text}{series=\bfseries}
 
 \setbeamerfont{title}{family=\rmfamily,series=\bfseries,size=\Huge}
-\setbeamerfont{subtitle}{family=\rmfamily,series=\ltseries,size=\Large}
+\setbeamerfont{subtitle}{family=\rmfamily,series=\ltseries,size=\LARGE}
 \setbeamerfont{part page}{size=\Huge, family=\rmfamily, series=\bfseries}
 \setbeamerfont{section title}{size=\Huge, family=\rmfamily, series=\bfseries}
 \setbeamerfont{subsection title}{size=\Huge, family=\rmfamily, series=\bfseries}
 \setbeamerfont{frametitle}{family=\rmfamily,series=\ltseries}
+\setbeamerfont{framesubtitle}{size=\large,series=\itshape}
 
 \setbeamerfont{description item}{series=\bfseries}
 
@@ -108,8 +112,8 @@
 \setbeamerfont{abstract}{size=\footnotesize, series=\ltseries}
 
 \setbeamerfont{bibliography item}{size=\footnotesize}
-\setbeamerfont{bibliography entry author}{size=\small}
-\setbeamerfont{bibliography entry title}{parent=bibliography entry author}
+\setbeamerfont{bibliography entry author}{size=\small,series=\mdseries}
+\setbeamerfont{bibliography entry title}{parent=bibliography entry author,series=\mdseries}
 \setbeamerfont{bibliography entry location}{parent=bibliography entry author}
 \setbeamerfont{bibliography entry note}{parent=bibliography entry author}
 
@@ -272,7 +276,7 @@
     {%
       \ifx\insertframesubtitle\@empty%
       \else%
-      {\usebeamerfont{framesubtitle}\usebeamercolor[fg]{framesubtitle}\strut\insertframesubtitle\strut\par}%
+      {\usebeamerfont{framesubtitle}\usebeamercolor[fg]{framesubtitle}\hskip-0.3cm\strut\insertframesubtitle\strut\par}%
       \fi
     }%
     \vskip0ex
