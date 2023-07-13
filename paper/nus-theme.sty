@@ -87,7 +87,7 @@
   FontFace = {lt}{n}{Raleway Light},
   FontFace = {lt}{it}{Raleway Light Italic},
 ]
-\setmonofont{Cousine Nerd Font}[Scale=MatchLowercase]
+\setmonofont{Ubuntu Mono}[Scale=MatchLowercase]
 \setmathfont{XITS Math}
 
 % see: https://tex.stackexchange.com/questions/176722/define-a-new-xxseries-macro-for-light-fonts
@@ -228,7 +228,7 @@
 \setbeamertemplate{title page}{%
   \thispagestyle{empty@titlepage}
   \begingroup
-    \vskip-2ex
+    \vskip-1ex
     \setbeamercolor{structure}{fg=white}
     \setbeamercolor{normal text}{fg=white}
     \centering
@@ -240,13 +240,14 @@
         {\usebeamerfont{subtitle}\usebeamercolor[fg]{subtitle}\insertsubtitle\par}%
       \fi%     
     \end{beamercolorbox}%
-    \vskip1em\par
+    \vskip0.5em\par
     \begin{beamercolorbox}[sep=8pt,center]{author}
       \usebeamerfont{author}\insertauthor
     \end{beamercolorbox}
     \begin{beamercolorbox}[sep=8pt,center]{institute}
       \usebeamerfont{institute}\insertinstitute
     \end{beamercolorbox}
+    \vskip-0.5em\par
     \begin{beamercolorbox}[sep=8pt,center]{date}
       \usebeamerfont{date}\insertdate
     \end{beamercolorbox}\vskip0.5em
@@ -336,4 +337,3 @@
 % \AtBeginSubsection{
 %   \frame{\subsectionpage}
 % }
-

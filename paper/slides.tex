@@ -59,12 +59,15 @@
   \inst{4} Computer Science and AI Laboratory (CSAIL), Massachusetts Institute of Technology \and%
   \inst{5} Department of Mathematics, University of Washington
 }
-\date[JuliaCon 2023]{JuliaCon 2023}
+\date[JuliaCon 2023]{\raisebox{-.2\height}{\includegraphics[width=2cm]{logojuliacon.pdf}} \textbf{2023}}
 
 \begin{document}
 
 \begin{frame}
   \titlepage
+  % \begin{tikzpicture}[remember picture, overlay]
+  %     \node[at=(current page.center),yshift=1.8cm] {};
+  % \end{tikzpicture}
 \end{frame}
 
 \hypertarget{jump-processes}{\section{Jump processes}\label{jump-processes}}
@@ -74,21 +77,19 @@
 \vspace{2em}
 
 {\Large
-
 \[
   du = 
       f(u, p, t) \eqnmarkbox[nus@gray]{deterministic}{dt} 
     + g (u, p, t) \eqnmarkbox[nus@orangebright]{diffusion}{dW (t)} 
     + h (u, p, t) \eqnmarkbox[nus@bluebright]{jump}{dN (t)}
 \]
-
+}
 
 \annotate[yshift=1em]{above,left}{deterministic}{\textbf{Deterministic component}}
-\annotate[yshift=0.75em]{above}{diffusion}{\textbf{Diffusion component}\\``some change occurs during any time interval,\\however small, but in small time intervals\\the changes are small'' \citet{feller1949}}
+\annotate[yshift=0.75em]{above}{diffusion}{\textbf{Diffusion component}\\``some change occurs during any\\time interval, however small, but in small\\time intervals the changes are small''\\\citet{feller1949}}
 \annotate[yshift=-1.5em]{below,left}{jump}{\textbf{Jump component}\\``the system remains for a time unchanged,\\then undergoes a sudden change into another state.'' \citet{feller1949}}
 
 \vspace{3em}
-}
 
 \alert{\texttt{JumpProcesses.jl}}: core library of \texttt{DifferentialEquations.jl} to sample the jump component.
 
@@ -593,4 +594,3 @@ Way forward:
 \end{frame}
 
 \end{document}
-
