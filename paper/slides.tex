@@ -287,8 +287,10 @@ end
 
 \begin{lstlisting}
 function (p::AbstractSSAJumpAggregator)(integrator::I)
-  execute_jumps!(p, integrator, integrator.u, integrator.p, integrator.t, p.affects!)
-  generate_jumps!(p, integrator, integrator.u, integrator.p, integrator.t)
+  execute_jumps!(p, integrator, integrator.u, integrator.p,
+      integrator.t, p.affects!)
+  generate_jumps!(p, integrator, integrator.u, integrator.p,
+      integrator.t)
   register_next_jump_time!(integrator, p, integrator.t) 
   nothing
 end
