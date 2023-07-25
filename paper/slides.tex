@@ -433,14 +433,14 @@ Added two benchmark suites to assess the performance of the new aggregators unde
 \toprule
  & \multicolumn{1}{c}{\textbf{ Diffusion }} & \multicolumn{1}{c}{\textbf{ Multi-state }} & \multicolumn{1}{c}{\textbf{ Gene I }} & \multicolumn{1}{c}{\textbf{ Gene II }} \\
 \hline
-\textbf{\texttt{Direct}}         & 7.14 s             & 0.16 s             & \underline{0.24 ms} & \underline{0.59 s} \\
-\textbf{\texttt{FRM}}            & 15.54 s            & 0.25 s             & 0.29 ms             & 0.81 s             \\
-\textbf{\texttt{SortingDirect}}  & 1.06 s             & \underline{0.11 s} & \textbf{0.23 ms}    & \textbf{0.50 s}    \\
-\textbf{\texttt{NRM}}            & 0.76 s             & 0.25 s             & 0.40 ms             & 0.91 s             \\
-\textbf{\texttt{DirectCR}}       & \underline{0.52 s} & 0.21 s             & 0.46 ms             & 1.03 s             \\
-\textbf{\texttt{RSSA}}           & 1.42 s             & \textbf{0.10 s}    & 0.43 ms             & 0.67 s             \\
-\textbf{\texttt{RSSACR}}         & \textbf{0.43 s}    & 0.15 s             & 0.88 ms             & 1.03 s             \\
-\textbf{\texttt{Coevolve}}       & 0.88 s             & 0.34 s             & 0.54 ms             & 1.29 s             \\
+\textbf{\texttt{Direct}}         & 7.18 s             & 0.16 s             & \underline{0.24 ms} & \underline{0.59 s} \\
+\textbf{\texttt{FRM}}            & 15.04 s            & 0.25 s             & 0.29 ms             & 0.78 s             \\
+\textbf{\texttt{SortingDirect}}  & 1.08 s             & \underline{0.11 s} & \textbf{0.23 ms}    & \textbf{0.50 s}    \\
+\textbf{\texttt{NRM}}            & 0.75 s             & 0.25 s             & 0.39 ms             & 0.89 s             \\
+\textbf{\texttt{DirectCR}}       & \underline{0.51 s} & 0.21 s             & 0.47 ms             & 1.00 s             \\
+\textbf{\texttt{RSSA}}           & 1.42 s             & \textbf{0.10 s}    & 0.43 ms             & 0.65 s             \\
+\textbf{\texttt{RSSACR}}         & \textbf{0.46 s}    & 0.16 s             & 0.91 ms             & 1.07 s             \\
+\textbf{\texttt{Coevolve}}       & 0.90 s             & 0.36 s             & 0.59 ms             & 1.33 s             \\
 \bottomrule
 \end{tabular}
 \caption{A 1-dimensional continuous time random walk approximation of a diffusion model (Diffusion), the multi-state model from Appendix A.6~\citet{marchetti2017} (Multi-state), a simple negative feedback gene expression model (Gene I) and the negative feedback gene expression from~\citet{gupta2018} (Gene II). Fastest time is \textbf{bold}, second fastest \underline{underlined}.}
@@ -512,7 +512,7 @@ end
 \begin{tikzpicture}
 
   \node[anchor=south west] (image) at (0, 0) {\includegraphics[trim={0 0 0 0.8cm},clip,width=10cm]{assets/hawkes-benchmark.png}};
-  \node[text width=8cm,overlay,yshift=4.5cm,xshift=-4.5cm,anchor=north west] at (image.south east) {%
+  \node[text width=8cm,overlay,yshift=4.1cm,xshift=-4.5cm,anchor=north west] at (image.south east) {%
     \footnotesize\texttt{use\_recursion=false} loops through the whole history of past events. \texttt{use\_recursion=true} only looks at the previous state of each node. \textit{Direct()} and \texttt{Coevolve} are algorithms from \texttt{JumpProcesses.jl}. When coupled with an ODE stepper, \texttt{Direct()} does not use its own algorithm, but the inverse method mentioned previously. \texttt{PDMPCHV()} is an algorithm from \texttt{PiecewiseDeterministicMarkovProcesses.jl} and \texttt{PyTick()} is a Python library.};
 
 \end{tikzpicture}
@@ -532,8 +532,8 @@ end
    & \textbf{Time} & \textbf{Allocation}  \\ 
   \hline
   \textbf{\textit{Inverse}} & -  & - \\ 
-  \textbf{\texttt{Coevolve}} & \underline{4.9 s} & \underline{131.4 Mb}  \\
-  \textbf{\textit{CHV}} & \textbf{2.4 s} & \textbf{54.0 Mb} \\
+  \textbf{\texttt{Coevolve}} & \underline{4.9 s} & \underline{95.2 Mb}  \\
+  \textbf{\textit{CHV}} & \textbf{2.4 s} & \textbf{43.8 Mb} \\
   \bottomrule
   \end{tabular}
   \end{table}
